@@ -9,7 +9,7 @@ const lenis = new Lenis({
   touchMultiplier: 1.5
 });
 
-// Sync Lenis with GSAP ticker — single RAF loop, no conflict
+// Sync Lenis with GSAP ticker — single RAF loop
 lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time) => { lenis.raf(time * 1000); });
 gsap.ticker.lagSmoothing(0);
@@ -42,6 +42,32 @@ navLinks.querySelectorAll('a').forEach(link => {
   });
 });
 
+/* ========== HELPER: safe scroll animation ========== */
+function animateIn(selector, fromVars, triggerEl) {
+  const elements = document.querySelectorAll(selector);
+  if (!elements.length) return;
+
+  // Set initial hidden state via class
+  elements.forEach(el => el.classList.add('gs-hidden'));
+
+  gsap.from(selector, {
+    ...fromVars,
+    scrollTrigger: {
+      trigger: triggerEl || selector,
+      start: 'top 85%',
+      toggleActions: 'play none none none',
+      onEnter: () => {
+        elements.forEach(el => el.classList.remove('gs-hidden'));
+      }
+    }
+  });
+
+  // Fallback: make visible after 3s no matter what
+  setTimeout(() => {
+    elements.forEach(el => el.classList.remove('gs-hidden'));
+  }, 3000);
+}
+
 /* ========== HERO ANIMATIONS ========== */
 const heroTL = gsap.timeline({ defaults: { ease: 'power3.out' } });
 heroTL
@@ -57,22 +83,16 @@ gsap.to('.hero-bg', {
 });
 
 /* ========== ABOUT SECTION ========== */
-gsap.from('.about-image', {
-  x: -60, opacity: 0, duration: 0.8, ease: 'power2.out',
-  scrollTrigger: { trigger: '.about-grid', start: 'top 75%', toggleActions: 'play none none none' }
-});
-gsap.from('.about-text', {
-  x: 60, opacity: 0, duration: 0.8, ease: 'power2.out',
-  scrollTrigger: { trigger: '.about-grid', start: 'top 75%', toggleActions: 'play none none none' }
-});
+animateIn('.about-image', { x: -60, opacity: 0, duration: 0.8, ease: 'power2.out' }, '.about-grid');
+animateIn('.about-text', { x: 60, opacity: 0, duration: 0.8, ease: 'power2.out' }, '.about-grid');
 
-/* ========== STATS COUNTER (RAF-based) ========== */
+/* ========== STATS COUNTER ========== */
 document.querySelectorAll('.stat-number').forEach(el => {
   const target = parseInt(el.dataset.target);
   const suffix = el.dataset.suffix || '';
   ScrollTrigger.create({
     trigger: el,
-    start: 'top 85%',
+    start: 'top 90%',
     onEnter: () => {
       const duration = 1500;
       const startTime = performance.now();
@@ -90,45 +110,16 @@ document.querySelectorAll('.stat-number').forEach(el => {
 });
 
 /* ========== SCROLL-IN ANIMATIONS ========== */
-// Services cards
-gsap.from('.service-card', {
-  y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out',
-  scrollTrigger: { trigger: '.services-grid', start: 'top 80%', toggleActions: 'play none none none' }
-});
+animateIn('.service-card', { y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }, '.services-grid');
+animateIn('.team-card', { y: 40, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out' }, '.team-grid');
+animateIn('.gallery-item', { y: 30, opacity: 0, duration: 0.5, stagger: 0.06, ease: 'power2.out' }, '.gallery-grid');
+animateIn('.process-step', { y: 30, opacity: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' }, '.process-steps');
+animateIn('.blog-card', { y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }, '.blog-grid');
+animateIn('.appointment-image', { x: -50, opacity: 0, duration: 0.8, ease: 'power2.out' }, '.appointment-wrapper');
+animateIn('.appointment-right', { x: 50, opacity: 0, duration: 0.8, ease: 'power2.out' }, '.appointment-wrapper');
 
-// Team cards
-gsap.from('.team-card', {
-  y: 40, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out',
-  scrollTrigger: { trigger: '.team-grid', start: 'top 80%', toggleActions: 'play none none none' }
-});
-
-// Gallery items
-gsap.from('.gallery-item', {
-  y: 30, opacity: 0, duration: 0.5, stagger: 0.06, ease: 'power2.out',
-  scrollTrigger: { trigger: '.gallery-grid', start: 'top 80%', toggleActions: 'play none none none' }
-});
-
-// Process steps
-gsap.from('.process-step', {
-  y: 30, opacity: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out',
-  scrollTrigger: { trigger: '.process-steps', start: 'top 80%', toggleActions: 'play none none none' }
-});
-
-// Blog cards
-gsap.from('.blog-card', {
-  y: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out',
-  scrollTrigger: { trigger: '.blog-grid', start: 'top 80%', toggleActions: 'play none none none' }
-});
-
-// Appointment section
-gsap.from('.appointment-image', {
-  x: -50, opacity: 0, duration: 0.8, ease: 'power2.out',
-  scrollTrigger: { trigger: '.appointment-wrapper', start: 'top 75%', toggleActions: 'play none none none' }
-});
-gsap.from('.appointment-right', {
-  x: 50, opacity: 0, duration: 0.8, ease: 'power2.out',
-  scrollTrigger: { trigger: '.appointment-wrapper', start: 'top 75%', toggleActions: 'play none none none' }
-});
+// Force a ScrollTrigger refresh after everything is set up
+ScrollTrigger.refresh();
 
 /* ========== SWIPER TESTIMONIALS ========== */
 new Swiper('.testimonial-swiper', {
@@ -187,7 +178,7 @@ form.addEventListener('submit', (e) => {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', (e) => {
     const href = anchor.getAttribute('href');
-    if (href === '#' || href === '#!') return; // skip logo/empty anchors
+    if (href === '#' || href === '#!') return;
     e.preventDefault();
     const target = document.querySelector(href);
     if (target) {
